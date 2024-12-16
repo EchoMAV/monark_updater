@@ -3,14 +3,22 @@
 import os
 import subprocess
 from time import sleep
-from typing import Any, Tuple
-from constants import BUZZER_PIN, DCIM_FOLDER, MAX_SD_CARD_CHECKS, PUBLIC_KEY_LOCATION, SD_CARD_LOCATION, SD_CARD_MOUNTED_LOCATION, SD_CARD_NAME
+from typing import Any, List, Tuple
+from constants import (
+    BUZZER_PIN,
+    DCIM_FOLDER,
+    MAX_SD_CARD_CHECKS,
+    PUBLIC_KEY_LOCATION,
+    SD_CARD_LOCATION,
+    SD_CARD_MOUNTED_LOCATION,
+    SD_CARD_NAME,
+)
 import RPi.GPIO as GPIO
 
 
 class MonarkUpdater:
     def __init__(self) -> None:
-        self.total_polls = 0 # we only try up to MAX_SD_CARD_CHECKS
+        self.total_polls = 0  # we only try up to MAX_SD_CARD_CHECKS
         try:
             GPIO.setmode(GPIO.BCM)
             GPIO.setup(BUZZER_PIN, GPIO.OUT)  # Drives buzzer
@@ -20,19 +28,19 @@ class MonarkUpdater:
     def _run_command(self, command: str) -> Any:
         try:
             result = subprocess.run(
-                    command.split(" "),
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                    text=True,
-                    timeout=2,
-                )
+                command.split(" "),
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                timeout=2,
+            )
             return result
         except Exception as e:
             print(e)
             raise Exception(e)
 
     def is_sd_card_present(self) -> Tuple[bool, bool]:
-        """ 
+        """
         Return a tuple indicating if the sd card is present and if it is mounted.
         """
         try:
@@ -47,11 +55,13 @@ class MonarkUpdater:
     def mount_sd_card(self) -> bool:
         try:
             self._run_command(f"sudo mkdir -p {SD_CARD_MOUNTED_LOCATION}")
-            result = self._run_command(f"sudo mount -o sync,fmask=0000,dmask=0000 {SD_CARD_LOCATION} {SD_CARD_MOUNTED_LOCATION}")
+            result = self._run_command(
+                f"sudo mount -o sync,fmask=0000,dmask=0000 {SD_CARD_LOCATION} {SD_CARD_MOUNTED_LOCATION}"
+            )
             if result.returncode == 0:
                 # make sure DCIM folder exists for saving images/video
                 self._run_command(f"sudo mkdir -p {DCIM_FOLDER}")
-                os.sync()
+                os.sync()  # type: ignore
                 return True
             self._play_failure_buzz()
             return False
@@ -62,7 +72,7 @@ class MonarkUpdater:
     def unmount_sd_card(self) -> bool:
         try:
             os.makedirs(SD_CARD_MOUNTED_LOCATION, exist_ok=True)
-            result=self._run_command(f"sudo umount {SD_CARD_MOUNTED_LOCATION}")
+            result = self._run_command(f"sudo umount {SD_CARD_MOUNTED_LOCATION}")
             if result.returncode == 0:
                 return True
             return False
@@ -70,15 +80,17 @@ class MonarkUpdater:
             print(f"Error occurred: {e}")
             return False
 
-    def verify_and_install_debs(self) -> list[str]:
+    def verify_and_install_debs(self) -> List[str]:
         file_list = os.listdir(SD_CARD_MOUNTED_LOCATION)
         debs = [f for f in file_list if f.endswith(".deb")]
         if not debs:
             return []
-        verified_debs = []
+        verified_debs: List[str] = []
         for deb in debs:
-            result=self._run_command(f"openssl dgst -sha256 -verify {PUBLIC_KEY_LOCATION} -signature {SD_CARD_MOUNTED_LOCATION}/{deb}.sig {SD_CARD_MOUNTED_LOCATION}/{deb}")
-            if result.returncode == 0: # TODO is this right?
+            result = self._run_command(
+                f"openssl dgst -sha256 -verify {PUBLIC_KEY_LOCATION} -signature {SD_CARD_MOUNTED_LOCATION}/{deb}.sig {SD_CARD_MOUNTED_LOCATION}/{deb}"
+            )
+            if result.returncode == 0:  # TODO is this right?
                 print(f"Verified {deb}. Installing now.")
                 self._run_command(f"sudo apt install {SD_CARD_MOUNTED_LOCATION}/{deb}")
             else:
@@ -88,9 +100,9 @@ class MonarkUpdater:
     def _play_mounted_buzz(self):
         for _ in range(1, 3):
             GPIO.output(BUZZER_PIN, GPIO.HIGH)
-            sleep(0.1) 
+            sleep(0.1)
             GPIO.output(BUZZER_PIN, GPIO.LOW)
-            sleep(0.1) 
+            sleep(0.1)
 
     def _play_failure_buzz(self):
         GPIO.output(BUZZER_PIN, GPIO.HIGH)
@@ -104,12 +116,7 @@ class MonarkUpdater:
                 if self.mount_sd_card():
                     print("SD card is mounted.")
                     self._play_mounted_buzz()
-                    if self.is_update_file_present():
-                        print("Update file is present.")
-                        # TODO Kick off process to update the system - wait for it to finish
-                        break
-                    else:
-                        print("Update file is not present.")
+                    self.verify_and_install_debs()
             elif is_present and is_mounted:
                 print("SD card is mounted and ready.")
                 break
@@ -117,9 +124,11 @@ class MonarkUpdater:
                 sleep(3)
                 self.total_polls += 1
 
+
 def main():
     sd_card_service = MonarkUpdater()
     sd_card_service.run()
+
 
 if __name__ == "__main__":
     main()
