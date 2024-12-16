@@ -1,6 +1,11 @@
 #!/usr/bin/env python3
 
+# We need to modify the path so pistreamer can be run from any location on the pi
+import sys
 import os
+
+sys.path.insert(0, "/usr/lib/python3.11/dist-packages/monark_updater/")
+
 import subprocess
 from time import sleep
 from typing import Any, List, Tuple
