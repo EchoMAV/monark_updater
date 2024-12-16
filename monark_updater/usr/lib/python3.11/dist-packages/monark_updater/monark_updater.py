@@ -1,11 +1,6 @@
 #!/usr/bin/env python3
 
-# We need to modify the path so monark-updater can be run from any location on the pi
-import sys
 import os
-
-sys.path.insert(0, "/usr/lib/python3.11/dist-packages/monark-updater/")
-
 import subprocess
 from time import sleep
 from typing import Any, Tuple
@@ -13,7 +8,7 @@ from constants import BUZZER_PIN, DCIM_FOLDER, MAX_SD_CARD_CHECKS, PUBLIC_KEY_LO
 import RPi.GPIO as GPIO
 
 
-class UpdaterService:
+class MonarkUpdater:
     def __init__(self) -> None:
         self.total_polls = 0 # we only try up to MAX_SD_CARD_CHECKS
         try:
@@ -123,7 +118,7 @@ class UpdaterService:
                 self.total_polls += 1
 
 def main():
-    sd_card_service = UpdaterService()
+    sd_card_service = MonarkUpdater()
     sd_card_service.run()
 
 if __name__ == "__main__":

@@ -1,5 +1,5 @@
 #!/bin/bash
-# create and install debian file if `monark-updater`
+# create and install debian file for `monark-updater`
 
 set -e
 
@@ -9,7 +9,7 @@ if [ ! -f private_key.pem ]; then
   exit 1
 fi
 
-PACKAGE_NAME="monark-updater"
+PACKAGE_NAME="monark_updater"
 SUDO=$(test ${EUID} -ne 0 && which sudo)
 
 $SUDO apt install -y dpkg
@@ -20,11 +20,16 @@ $SUDO chmod 755 usr/bin/$PACKAGE_NAME
 dpkg-deb --root-owner-group --build . ../
 cd ..
 
-DEB_FILE=$(find . -type f -name "$PACKAGE_NAME_*" | head -n 1)
+DEB_FILE=$(find . -type f -name "*arm64.deb" | head -n 1)
+echo "Debian file created: $DEB_FILE"
 
 # Generate a SHA-256 Digest of the .deb File
-openssl dgst -sha256 -out $DEB_FILE.sha256 $DEB_FILE
+$SUDO openssl dgst -sha256 -out $DEB_FILE.sha256 $DEB_FILE
 # Sign the Digest with the Private Key
-openssl dgst -sha256 -sign private_key.pem -out $DEB_FILE.sig $DEB_FILE
-
-echo "Add `$DEB_FILE.sig` and `$DEB_FILE` to source control."
+$SUDO openssl dgst -sha256 -sign private_key.pem -out $DEB_FILE.sig $DEB_FILE
+echo
+echo "=======-------======="
+echo
+echo "Add $DEB_FILE.sig and $DEB_FILE to source control."
+echo
+echo "=======-------======="
