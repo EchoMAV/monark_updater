@@ -1,7 +1,19 @@
 # monark_updater
 Checks for sd card activity and performs system updates if necessary.
 
-# MONARK_Management (Software Updates)
-`monark.py` also has an action type which is designed to run as a background service on the pi and periodically poll for sd card activity. If detected, it will take care of auto mounting and configuring for two cases:
-1. If only a file called `update.zip` is present then it is mounted in readonly mode and the file will be extracted and the containing `update.sh` script will be executed.
-2. Otherwise, the sd card will be mounted in read/write mode so that high res photos/videos can be saved on it.
+# DEB Software Updates
+EchoMAV DEB packages are distrubted through private apt repos and signed with an EchoMAV private key. The MONARK build has the corresponding public key loaded. Repos outside of standard debian/rpi/EchoMAV channels will not auto install.
+
+To build official EchoMAV repo distributions, first import the private key into your build environment via `gpg --import private-key.asc`.
+
+Optionally you may remove via `shred -u private-key.asc`.
+
+# Buzzer Specs
+## Pairing Drone
+Single beep heartbeat (Drone is in pairing mode scanning for QR codes)
+Quick double beep (Drone has successfully scanned the QR code)
+Slow double beep heartbeat (Pairing is in progress)
+## SD Card Operations
+Single beep (SD card detected)
+Quick triple beep (Drone has detected software updates)
+Slow single beep heartbeat (Software update in progress)

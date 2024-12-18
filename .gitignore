@@ -1,3 +1,4 @@
-private_key.pem
+private-key*
 *.vscode
 *.deb.sha256
+*.env
