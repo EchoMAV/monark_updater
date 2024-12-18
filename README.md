@@ -9,11 +9,4 @@ To build official EchoMAV repo distributions, first import the private key into 
 Optionally you may remove via `shred -u private-key.asc`.
 
 # Buzzer Specs
-## Pairing Drone
-Single beep heartbeat (Drone is in pairing mode scanning for QR codes)
-Quick double beep (Drone has successfully scanned the QR code)
-Slow double beep heartbeat (Pairing is in progress)
-## SD Card Operations
-Single beep (SD card detected)
-Quick triple beep (Drone has detected software updates)
-Slow single beep heartbeat (Software update in progress)
+See `buzzer_service.py` for details.
